@@ -31,6 +31,7 @@
             this.scanButton = new System.Windows.Forms.Button();
             this.statusLabel = new System.Windows.Forms.Label();
             this.stopButton = new System.Windows.Forms.Button();
+            this.boxButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // scanButton
@@ -62,11 +63,22 @@
             this.stopButton.UseVisualStyleBackColor = true;
             this.stopButton.Click += new System.EventHandler(this.stopButton_Click);
             // 
+            // boxButton
+            // 
+            this.boxButton.Location = new System.Drawing.Point(220, 12);
+            this.boxButton.Name = "boxButton";
+            this.boxButton.Size = new System.Drawing.Size(25, 23);
+            this.boxButton.TabIndex = 3;
+            this.boxButton.Text = "?";
+            this.boxButton.UseVisualStyleBackColor = true;
+            this.boxButton.Click += new System.EventHandler(this.boxButton_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(257, 103);
+            this.Controls.Add(this.boxButton);
             this.Controls.Add(this.stopButton);
             this.Controls.Add(this.statusLabel);
             this.Controls.Add(this.scanButton);
@@ -82,6 +94,7 @@
         private System.Windows.Forms.Button scanButton;
         private System.Windows.Forms.Label statusLabel;
         private System.Windows.Forms.Button stopButton;
+        private System.Windows.Forms.Button boxButton;
     }
 }
 

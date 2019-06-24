@@ -7,6 +7,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -163,6 +164,23 @@ namespace AutoFisher
                 update();
         }
 
+        private void stopButton_Click(object sender, EventArgs e)
+        {
+            if (!stopRequested)
+                stopRequested = true;
+        }
+
+        private void boxButton_Click(object sender, EventArgs e)
+        {
+            // Draw the fishing area on screen
+            IntPtr desktopPtr = GetDC(IntPtr.Zero);
+            Graphics g = Graphics.FromHdc(desktopPtr);
+            Rectangle mouseNewRect = new Rectangle(new Point(xStart, yStart), new Size(xEnd - xStart, yEnd - yStart));
+            g.DrawRectangle(new Pen(Brushes.Chocolate), mouseNewRect);
+            g.Dispose();
+            ReleaseDC(desktopPtr);
+        }
+
         //This is a replacement for Cursor.Position in WinForms
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         static extern bool SetCursorPos(int x, int y);
@@ -180,12 +198,10 @@ namespace AutoFisher
             mouse_event(MOUSEEVENTF_LEFTDOWN, xpos, ypos, 0, 0);
             mouse_event(MOUSEEVENTF_LEFTUP, xpos, ypos, 0, 0);
         }
-
-        private void stopButton_Click(object sender, EventArgs e)
-        {
-            if (!stopRequested)
-                stopRequested = true;
-        }
+        [DllImport("User32.dll")]
+        public static extern IntPtr GetDC(IntPtr hwnd);
+        [DllImport("User32.dll")]
+        public static extern void ReleaseDC(IntPtr dc);
     }
 
 
