@@ -25,6 +25,8 @@ namespace AutoFisher
         volatile static bool stopRequested = false;
         volatile static bool breakTime = false;
         int numRunning = 0;
+        DateTime start = DateTime.Now;
+        TimeSpan maxDuration = new TimeSpan(3, 0, 0);
 
         public Form1()
         {
@@ -83,55 +85,60 @@ namespace AutoFisher
                 {
                     while (!stopRequested)
                     {
+                        // Close after running over max duration
+                        if ((DateTime.Now - start) > maxDuration)
+                            Application.Exit();
+
                         setStatus("In progress");
                         int outerI = 0;
-                        foreach (Bitmap pix in pics)
+                        using (Bitmap screenCapture = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height))
                         {
 
-                            var task = new Task(() =>
+                            Graphics g = Graphics.FromImage(screenCapture);
+
+                            g.CopyFromScreen(Screen.PrimaryScreen.Bounds.X,
+                                         Screen.PrimaryScreen.Bounds.Y,
+                                         0, 0,
+                                         screenCapture.Size,
+                                         CopyPixelOperation.SourceCopy);
+                            foreach (Bitmap pix in pics)
                             {
-                                var i = Interlocked.Increment(ref outerI);
-                                var pic = pics[i - 1];
-                                Debug.WriteLine("Thread starting: " + i);
+                                var copy = new Bitmap(screenCapture);
 
-                                try
+                                var task = new Task(() =>
                                 {
-                                    Bitmap screenCapture = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+                                    var i = Interlocked.Increment(ref outerI);
+                                    var pic = pics[i - 1];
+                                    Debug.WriteLine("Thread starting: " + i);
+                                    var localScreenCapture = copy;
 
-                                    Graphics g = Graphics.FromImage(screenCapture);
-
-                                    g.CopyFromScreen(Screen.PrimaryScreen.Bounds.X,
-                                                 Screen.PrimaryScreen.Bounds.Y,
-                                                 0, 0,
-                                                 screenCapture.Size,
-                                                 CopyPixelOperation.SourceCopy);
-
-
-
-                                    bool isInCapture = IsInCapture(pic, screenCapture, out Tuple<int, int> point);
-                                    if (isInCapture)
+                                    try
                                     {
-                                        breakTime = true;
-                                        setStatus($"Pic: {i} point: {point?.Item1};{point?.Item2}");
-                                        LeftMouseClick(point.Item1, point.Item2);
-                                        Thread.Sleep(100);
-                                        SetCursorPos(0, 0);
-                                        stats.AddOrUpdate(i, 1, (a, b) => Interlocked.Increment(ref b));
+                                        bool isInCapture = IsInCapture(pic, localScreenCapture, out Tuple<int, int> point);
+                                        if (isInCapture)
+                                        {
+                                            breakTime = true;
+                                            setStatus($"Pic: {i} point: {point?.Item1};{point?.Item2}");
+                                            LeftMouseClick(point.Item1, point.Item2);
+                                            Thread.Sleep(100);
+                                            SetCursorPos(0, 0);
+                                            stats.AddOrUpdate(i, 1, (a, b) => Interlocked.Increment(ref b));
 
+                                        }
                                     }
-                                }
-                                catch (Exception)
-                                {
-                                    Debug.WriteLine("Problem with Thread " + i);
-                                }
+                                    catch (Exception)
+                                    {
+                                        Debug.WriteLine("Problem with Thread " + i);
+                                    }
 
-                                Interlocked.Decrement(ref numRunning);
-                                Debug.WriteLine("Thread stopping: " + i);
-                            });
-                            task.Start();
-                            Interlocked.Increment(ref numRunning);
+                                    Interlocked.Decrement(ref numRunning);
+                                    localScreenCapture.Dispose();
+                                    Debug.WriteLine("Thread stopping: " + i);
+                                });
+                                task.Start();
+                                Interlocked.Increment(ref numRunning);
+                            }
                         }
-
                         Thread.Sleep(500);
 
                         while (numRunning != 0)
